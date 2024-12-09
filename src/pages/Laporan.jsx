@@ -3,42 +3,59 @@ import Navbar from '../components/shared/Navbar';
 import Footer from '../components/shared/Footer';
 import ReportTable from '../components/ReportTable';
 
-const dummyData = [
-  { waktu: '2024-11-20 08:00', nitrogen: 531, fosfor: 50, kalium: 140, ph: 6.5 },
-  { waktu: '2024-11-20 10:00', nitrogen: 540, fosfor: 55, kalium: 150, ph: 6.4 },
-  { waktu: '2024-11-20 12:00', nitrogen: 550, fosfor: 58, kalium: 160, ph: 6.3 },
-  { waktu: '2024-11-20 14:00', nitrogen: 560, fosfor: 60, kalium: 170, ph: 6.2 },
-];
-
 const Laporan = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [filteredData, setFilteredData] = useState(dummyData);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const filterData = () => {
-    let data = dummyData;
-    if (startDate) {
-      data = data.filter(row => new Date(row.waktu) >= new Date(startDate));
+  const fetchData = async () => {
+    if (!startDate || !endDate) {
+      alert('Harap isi tanggal mulai dan tanggal akhir.');
+      return;
     }
-    if (endDate) {
-      data = data.filter(row => new Date(row.waktu) <= new Date(endDate));
+
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `http://api.soilmonitor.my.id/sensor/?start=${startDate}&end=${endDate}`
+      );
+      const result = await response.json();
+
+      if (response.ok) {
+        const groupedData = groupByField(result.data);
+        setData(groupedData);
+      } else {
+        alert(result.message || 'Gagal memuat data.');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      alert('Terjadi kesalahan saat memuat data.');
+    } finally {
+      setLoading(false);
     }
-    setFilteredData(data);
+  };
+
+  const groupByField = (data) => {
+    return data.reduce((acc, curr) => {
+      if (!acc[curr._field]) {
+        acc[curr._field] = [];
+      }
+      acc[curr._field].push({
+        waktu: curr._time,
+        nilai: curr._value,
+      });
+      return acc;
+    }, {});
   };
 
   const downloadCSV = () => {
-    let csvContent = 'Waktu,Nitrogen (ppm),Fosfor (ppm),Kalium (ppm),pH\n';
-    filteredData.forEach(row => {
-      csvContent += `${row.waktu},${row.nitrogen},${row.fosfor},${row.kalium},${row.ph}\n`;
-    });
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'laporan-data-sensor.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    if (!startDate || !endDate) {
+      alert('Harap isi tanggal mulai dan tanggal akhir.');
+      return;
+    }
+    const url = `http://api.soilmonitor.my.id/sensor/csv?start=${startDate}&end=${endDate}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -71,7 +88,7 @@ const Laporan = () => {
             />
           </div>
           <button
-            onClick={filterData}
+            onClick={fetchData}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
             Terapkan Filter
@@ -79,7 +96,16 @@ const Laporan = () => {
         </div>
 
         {/* Tabel Data */}
-        <ReportTable data={filteredData} />
+        {loading ? (
+          <p className="text-gray-600">Memuat data...</p>
+        ) : (
+          Object.keys(data).map((field) => (
+            <div key={field} className="mb-8">
+              <h2 className="text-lg font-bold mb-2">{field.toUpperCase()}</h2>
+              <ReportTable data={data[field]} />
+            </div>
+          ))
+        )}
 
         {/* Download Section */}
         <div className="mt-6">

@@ -1,4 +1,3 @@
-// src/components/dashboard/ChartComponent.jsx
 import React, { useEffect, useRef } from 'react';
 import Chart from 'chart.js/auto';
 
@@ -6,14 +5,16 @@ const ChartComponent = ({ title, color, data, bgcolor }) => {
   const chartRef = useRef();
 
   useEffect(() => {
+    if (!data.labels.length || !data.values.length) return;
+
     const chart = new Chart(chartRef.current, {
       type: 'line',
       data: {
-        labels: ['08:00', '10:00', '12:00', '14:00', '16:00'],
+        labels: data.labels,
         datasets: [
           {
             label: title,
-            data,
+            data: data.values,
             borderColor: color,
             backgroundColor: bgcolor,
             fill: true,
@@ -23,6 +24,20 @@ const ChartComponent = ({ title, color, data, bgcolor }) => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Waktu',
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: title,
+            },
+          },
+        },
       },
     });
 
