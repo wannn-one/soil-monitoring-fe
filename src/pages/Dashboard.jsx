@@ -6,6 +6,9 @@ import Footer from '../components/shared/Footer';
 import Card from '../components/Card';
 import ChartComponent from '../components/ChartComponent';
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const INTERVAL = import.meta.env.VITE_AUTO_UPDATE_INTERVAL;
+
 const Dashboard = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -16,7 +19,7 @@ const Dashboard = () => {
 
   const fetchData = async (field, setter, start, end) => {
     try {
-      const response = await fetch(`http://api.soilmonitor.my.id/sensor/?field=${field}&start=${start}&end=${end}`);
+      const response = await fetch(`${BASE_URL}/sensor/?field=${field}&start=${start}&end=${end}`);
       const result = await response.json();
   
       if (response.ok) {
@@ -39,7 +42,6 @@ const Dashboard = () => {
       console.error(`Error fetching data for ${field}:`, error);
     }
   };
-  
 
   const handleLoadData = () => {
     if (!startDate || !endDate) {
@@ -52,6 +54,19 @@ const Dashboard = () => {
     fetchData('phosphorus', setPhosphorusData, startDate, endDate);
     fetchData('potassium', setPotassiumData, startDate, endDate);
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (startDate && endDate) {
+        fetchData('nitrogen', setNitrogenData, startDate, endDate);
+        fetchData('ph', setPhData, startDate, endDate);
+        fetchData('phosphorus', setPhosphorusData, startDate, endDate);
+        fetchData('potassium', setPotassiumData, startDate, endDate);
+      }
+    }, `${INTERVAL}`); 
+
+    return () => clearInterval(interval); 
+  }, [startDate, endDate]);
 
   return (
     <div className="flex flex-col min-h-screen">

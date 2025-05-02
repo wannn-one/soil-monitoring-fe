@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import Navbar from '../components/shared/Navbar';
 import Footer from '../components/shared/Footer';
 import ReportTable from '../components/ReportTable';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Laporan = () => {
   const [startDate, setStartDate] = useState('');
@@ -18,7 +22,7 @@ const Laporan = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://api.soilmonitor.my.id/sensor/?start=${startDate}&end=${endDate}`
+        `${BASE_URL}/sensor/?start=${startDate}&end=${endDate}`
       );
       const result = await response.json();
 
@@ -54,9 +58,47 @@ const Laporan = () => {
       alert('Harap isi tanggal mulai dan tanggal akhir.');
       return;
     }
-    const url = `http://api.soilmonitor.my.id/sensor/csv?start=${startDate}&end=${endDate}`;
+    const url = `${BASE_URL}/sensor/csv?start=${startDate}&end=${endDate}`;
     window.open(url, '_blank');
   };
+
+  const downloadPDF = () => {
+    if (!startDate || !endDate) {
+      alert('Harap isi tanggal mulai dan tanggal akhir.');
+      return;
+    }
+  
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text('Laporan Data Sensor', 14, 20);
+    doc.setFontSize(12);
+    doc.text(`Periode: ${startDate} hingga ${endDate}`, 14, 28);
+  
+    let yOffset = 36;
+  
+    Object.keys(data).forEach((field) => {
+      doc.setFontSize(14);
+      doc.text(`${field.toUpperCase()}`, 14, yOffset);
+      yOffset += 6;
+  
+      const rows = data[field].map((item) => [
+        new Date(item.waktu).toLocaleString(),
+        item.nilai,
+      ]);
+  
+      autoTable(doc, {
+        head: [['Waktu', 'Nilai']],
+        body: rows,
+        startY: yOffset,
+        theme: 'grid',
+        headStyles: { fillColor: [0, 123, 255] },
+      });
+  
+      yOffset = doc.lastAutoTable.finalY + 10; // Update yOffset agar tidak tumpuk
+    });
+  
+    doc.save(`laporan_sensor_${startDate}_sampai_${endDate}.pdf`);
+  };  
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -116,8 +158,8 @@ const Laporan = () => {
             Unduh Laporan (CSV)
           </button>
           <button
-            onClick={() => alert('Fitur Unduh PDF sedang dalam pengembangan.')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            onClick={downloadPDF}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
           >
             Unduh Laporan (PDF)
           </button>

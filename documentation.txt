@@ -1,0 +1,17 @@
+1. install node js & npm
+apabila sudah terinstall, cek dengan :
+node -v    --> versi node js
+npm -v     --> versi npm
+
+2. clone repo frontend
+
+3. hapus file package-log.json
+
+4. install dependencies yg dibutuhkan 
+npm install
+
+5. run server
+npm run dev
+
+catatan :
+seluruh konfigurasi, silahkan di sesuaikan pada file .env (base url backend)

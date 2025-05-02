@@ -17,6 +17,11 @@ const Navbar = () => {
           </Link>
         </li>
         <li>
+          <Link to="/graph" className="text-white hover:underline">
+            Grafik
+          </Link>
+        </li>
+        <li>
           <Link to="/laporan" className="text-white hover:underline">
             Laporan
           </Link>
